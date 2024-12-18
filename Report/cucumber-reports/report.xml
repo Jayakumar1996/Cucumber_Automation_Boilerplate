@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Cucumber" time="51.369" tests="2" skipped="0" failures="0" errors="0">
+<testcase classname="Verify Fleet Management Dashboard Page" name="To Verify Fleet Management Login WebPage With Valid Credentials" time="19.143">
+<system-out><![CDATA[
+Given User should be in Fleet Management Login Page.........................passed
+When User should Enter userName and password................................passed
+And User should Click Login button..........................................passed
+Then User should validate Login success message.............................passed
+]]></system-out>
+</testcase>
+<testcase classname="Inventory Management" name="Create a new part in Inventory Management" time="31.78">
+<system-out><![CDATA[
+Given User should be navigated into the Fleet Management system Dashboard with valid credentials.passed
+When User navigates to the Inventory Management section.....................passed
+When User clicks on the Parts module in the navbar..........................passed
+And User clicks on the Create Part button...................................passed
+And User fills in the following data:.......................................passed
+And User clicks on the Submit button........................................passed
+Then User should see the New Part displayed in the parts table..............passed
+]]></system-out>
+</testcase>
+</testsuite>
