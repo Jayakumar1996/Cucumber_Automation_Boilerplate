@@ -10,7 +10,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class LoginPage {
 	
-	private WebDriver driver;
+	WebDriver driver;
 	WebDriverWait wait;
 
 	// Locators

@@ -30,15 +30,8 @@ public class TestRunnerClass  {
 	public static void report() {
       ReportingClass.generateReport("target\\jsonReport.json");
       System.out.println("Email started to trigger in testrunner class");
-//
-//		 EmailReportManager.getReportInstance().flush();
-//		 System.out.println("Email Entered1");
-   // Example: Send email with the report generated
-   // Fetch the report path from config.properties
-   // Example: Fetching the report path and sending email
+
       ConfigReader config = new ConfigReader();
-//      String reportPath = config.getReportPath();
-//      EmailUtil.sendEmail(reportPath);
       
       File reportFile = new File(config.getReportPath());
       if (!reportFile.exists()) {
