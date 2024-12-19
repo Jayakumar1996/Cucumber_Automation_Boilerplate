@@ -1,13 +1,24 @@
 package hooks;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
@@ -22,208 +33,267 @@ import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import org.testng.Assert;
 
 public class BaseClass {
-	public static WebDriver driver;
-	public static JavascriptExecutor js;
-	protected String parentWindowHandle;
+    public static WebDriver driver;
+    public static JavascriptExecutor js;
+    protected String parentWindowHandle;
 
-	public static void setup(String browserName) {
+    // Setup driver based on browser name
+    public static void setup(String browserName) {
+        switch (browserName.toLowerCase()) {
+            case "chrome":
+                driver = new ChromeDriver();
+                break;
+            case "firefox":
+                driver = new FirefoxDriver();
+                break;
+            case "edge":
+                driver = new EdgeDriver();
+                break;
+            case "safari":
+                driver = new SafariDriver();
+                break;
+            default:
+                System.out.println("Unsupported browser: " + browserName);
+        }
+    }
 
-		if (browserName.equals("chrome")) {
-			driver = new ChromeDriver();
-
-		} else if (browserName.equals("firefox")) {
-			driver = new FirefoxDriver();
-
-		} else if (browserName.equals("edge")) {
-			driver = new EdgeDriver();
-
-		} else if (browserName.equals("safari")) {
-			driver = new SafariDriver();
-		}
+    // Setup for multi-platform support
+    public static void multiPlatform(String browserName, String platform) {
+        if (List.of("windows", "mac", "linux").contains(platform.toLowerCase())) {
+            setup(browserName);
+        } else {
+            System.out.println("Invalid platform name");
+        }
+    }
+    
+	public static void deleteAllCookies(){
+		driver.manage().deleteAllCookies();	
+	}
+	
+	public static void maximize() {
+		driver.manage().window().maximize();
 	}
 
-	public void textSendByJS(WebElement element, String keysToSend) {
-		js = (JavascriptExecutor) driver;
-		js.executeScript("arguments[0].setAttribute('value','" + keysToSend + "')", element);
-
+	public static void impWait(int sec) {
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(sec));
+	}
+	
+	public static void sendKeys(WebElement e, String data) {
+		e.sendKeys(data);
 	}
 
-	public void setText(By by, String text) {
-		try {
-			WebElement element = driver.findElement(by);
-			String value = element.getText();
-//			element.clear();
-			element.sendKeys(text);
-			System.out.println("Sent keys to element with XPath: " + value);
-		} catch (Exception e) {
-			WebElement element = driver.findElement(by);
-			String value = element.getText();
-			System.out.println("Unable to send keys to element with XPath: " + value);
-			e.printStackTrace();
-		}
-	}
+    // Send text using JavaScript
+    public void textSendByJS(WebElement element, String keysToSend) {
+        js = (JavascriptExecutor) driver;
+        js.executeScript("arguments[0].setAttribute('value', arguments[1])", element, keysToSend);
+    }
 
-	public void click(By by) {
+    // Set text in an element located by By
+    public void setText(By by, String text) {
+        try {
+            WebElement element = driver.findElement(by);
+            element.clear();
+            element.sendKeys(text);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-		try {
-			WebElement element = driver.findElement(by);
-			String value = element.getText();
-			element.click();
-			System.out.println("Clicked element with XPath: " + value);
-		} catch (Exception e) {
-			WebElement element = driver.findElement(by);
-			String value = element.getText();
-			System.out.println("Unable to click element with XPath: " + value);
+    // Click an element located by By
+    public void click(By by) {
+        try {
+            driver.findElement(by).click();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-		}
-	}
+    // Get current URL
+    public static String getCurrentUrl() {
+        return driver.getCurrentUrl();
+    }
 
-	public static String getCurrentUrl() {
-		String url = driver.getCurrentUrl();
-		System.out.println("Unable to click element with XPath: " + url);
-		return url;
-	}
+    // Quit driver
+    public static void quit() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
 
-//need set drivet null in if condition
-	public static void quit() {
-		if (driver != null) {
-			driver.quit();
-		}
-	}
+    // Drag and drop between elements located by By
+    public static void dragAndDrop(By fromLocator, By toLocator) {
+        WebElement from = driver.findElement(fromLocator);
+        WebElement to = driver.findElement(toLocator);
+        new Actions(driver).dragAndDrop(from, to).perform();
+    }
 
-	// change to by
+    // Scroll to an element using JavaScript
+    public void scroll(By elementLocator, String direction) {
+        WebElement element = driver.findElement(elementLocator);
+        js = (JavascriptExecutor) driver;
+        boolean scrollDown = direction.equalsIgnoreCase("down");
+        js.executeScript("arguments[0].scrollIntoView(arguments[1])", element, scrollDown);
+    }
 
-	public static void dragAndDrop(By fromLocator, By toLocator) {
-		WebElement from = driver.findElement(fromLocator);
-		WebElement to = driver.findElement(toLocator);
-		Actions a = new Actions(driver);
-		a.dragAndDrop(from, to).perform();
-	}
+    // Capture screenshot
+    public void screenCapture(String name) throws IOException {
+        TakesScreenshot ts = (TakesScreenshot) driver;
+        File source = ts.getScreenshotAs(OutputType.FILE);
+        FileUtils.copyFile(source, new File("Screenshots/" + name + ".jpeg"));
+    }
 
-	// change to by
-	public void scroll(By elementLocator, String type) {
-		WebElement element = driver.findElement(elementLocator);
+    // Save a screenshot to a specific path
+    public void saveScreenshot(String sourcePath, String destinationPath) {
+        try {
+            Files.createDirectories(Paths.get(destinationPath).getParent());
+            Files.move(Paths.get(sourcePath), Paths.get(destinationPath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-		switch (type) {
-		case "Up":
-			js.executeScript("arguments[0].scrollIntoView(false)", element);
-			break;
+    // Select an option by value
+    public void selectByValue(By elementLocator, String value) {
+        new Select(driver.findElement(elementLocator)).selectByValue(value);
+    }
 
-		case "Down":
-			js.executeScript("arguments[0].scrollIntoView(true)", element);
-			break;
+    // Switch to a specific frame
+    public void frame(By elementLocator) {
+        driver.switchTo().frame(driver.findElement(elementLocator));
+    }
 
-		default:
-			System.out.println("Invalid Type");
-			break;
-		}
-	}
+    // Refresh the browser
+    public void refresh() {
+        driver.navigate().refresh();
+    }
 
-// change folder path
-	public void screenCapture(String name) throws IOException {
+    // Store parent window handle
+    public void storeParentWindowHandle() {
+        parentWindowHandle = driver.getWindowHandle();
+    }
 
-		TakesScreenshot ts = (TakesScreenshot) driver;
-		File source = ts.getScreenshotAs(OutputType.FILE);
-		File target = new File(
-				"C:\\Users\\jayakumart\\eclipse-workspace\\Fleet_Automation\\Screenshot" + name + ".jpeg");
-		FileUtils.copyFile(source, target);
-	}
+    // Switch to a child window
+    public void switchToChildWindow() {
+        Set<String> allWindowHandles = driver.getWindowHandles();
+        for (String handle : allWindowHandles) {
+            if (!handle.equals(parentWindowHandle)) {
+                driver.switchTo().window(handle);
+                break;
+            }
+        }
+    }
 
-	public void saveScreenshot(String sourcePath, String destinationPath) {
-		try {
-			// Ensure the destination directory exists
-			Files.createDirectories(Paths.get(destinationPath).getParent());
+    // Explicit waits
+    public WebElement waitForElementToBeVisible(By locator, int timeoutInSeconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
 
-			// Move the screenshot file
-			Files.move(Paths.get(sourcePath), Paths.get(destinationPath));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    public WebElement waitForElementToBeClickable(By locator, int timeoutInSeconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds))
+                .until(ExpectedConditions.elementToBeClickable(locator));
+    }
 
-	// change to by
-	public void selectByValue(By elementLocator, String value) {
-		WebElement element = driver.findElement(elementLocator);
-		Select select = new Select(element);
-		select.selectByValue(value);
-	}
+    public boolean waitForElementToBeInvisible(By locator, int timeoutInSeconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds))
+                .until(ExpectedConditions.invisibilityOfElementLocated(locator));
+    }
 
-	public void frame(By elementLocator) {
-		WebElement element = driver.findElement(elementLocator);
-		driver.switchTo().frame(element);
-	}
+    public WebElement waitForElementToBePresent(By locator, int timeoutInSeconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds))
+                .until(ExpectedConditions.presenceOfElementLocated(locator));
+    }
 
-	public void refresh() {
-		driver.navigate().refresh();
-	}
+    public boolean waitForTitleToBe(String title, int timeoutInSeconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds))
+                .until(ExpectedConditions.titleIs(title));
+    }
 
-//	public String windowHandling(int index) {
-//
-//		// To find Parent Windows ID
-//		String parentWindowsID = driver.getWindowHandle();
-//
-//		// To find All windows ID
-//		Set<String> allWindowsID = driver.getWindowHandles();
-//
-//		// To add all windows into List
-//		List<String> li = new LinkedList<>();
-//		li.addAll(allWindowsID);
-//
-//		// To get Required windows ID
-//		String childWindowsID = li.get(index);
-//
-//		return childWindowsID;
-//	}
-	// Method to store the parent window handle
-	public void storeParentWindowHandle() {
-		parentWindowHandle = driver.getWindowHandle();
-	}
+    public boolean waitForUrlToContain(String fraction, int timeoutInSeconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds))
+                .until(ExpectedConditions.urlContains(fraction));
+    }
 
-	// Method to switch to the child window
-	public void switchToChildWindow() {
-		Set<String> allWindowHandles = driver.getWindowHandles();
-		for (String windowHandle : allWindowHandles) {
-			if (!windowHandle.equals(parentWindowHandle)) {
-				driver.switchTo().window(windowHandle);
-				break;
-			}
-		}
-	}
+    // Take screenshot
+    public void takeScreenshot(String fileName) throws IOException {
+        File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+        FileUtils.copyFile(screenshot, new File(fileName));
+    }
 
-	// Explicit Waits
-	public WebElement waitForElementToBeVisible(By locator, int timeoutInSeconds) {
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds));
-		return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
-	}
+    // Switch to new tab
+    public void switchToNewTab() {
+        ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
+        if (tabs.size() > 1) driver.switchTo().window(tabs.get(1));
+    }
 
-	public WebElement waitForElementToBeClickable(By locator, int timeoutInSeconds) {
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds));
-		return wait.until(ExpectedConditions.elementToBeClickable(locator));
-	}
+    // Switch to main tab
+    public void switchToMainTab() {
+        ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
+        if (!tabs.isEmpty()) driver.switchTo().window(tabs.get(0));
+    }
 
-	public boolean waitForElementToBeInvisible(By locator, int timeoutInSeconds) {
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds));
-		return wait.until(ExpectedConditions.invisibilityOfElementLocated(locator));
-	}
+    // Construct file path relative to project directory
+    public String constructProjectFilePath(String... paths) {
+        return Paths.get(System.getProperty("user.dir"), paths).toString();
+    }
 
-	public WebElement waitForElementToBePresent(By locator, int timeoutInSeconds) {
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds));
-		return wait.until(ExpectedConditions.presenceOfElementLocated(locator));
-	}
+    // Upload file
+    public void uploadFile(By fileInputLocator, String filePath) {
+        File file = new File(filePath);
+        Assert.assertTrue(file.exists(), "File not found: " + filePath);
+        driver.findElement(fileInputLocator).sendKeys(filePath);
+    }
 
-	public Boolean waitForTitleToBe(String title, int timeoutInSeconds) {
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds));
-		return wait.until(ExpectedConditions.titleIs(title));
-	}
+    // Read Excel file
+    public String readExcel(int rownum, int cellnum) throws IOException {
+        FileInputStream stream = new FileInputStream(new File("data.xlsx"));
+        Workbook book = new XSSFWorkbook(stream);
+        Sheet sheet = book.getSheetAt(0);
+        Cell cell = sheet.getRow(rownum).getCell(cellnum);
+        
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return new SimpleDateFormat("dd/MM/yyyy").format(cell.getDateCellValue());
+                } else {
+                    return BigDecimal.valueOf(cell.getNumericCellValue()).toString();
+                }
+            default:
+                return "";
+        }
+    }
+    
+	public static String generateRandomName() {
+        String characters = "abcdefghijklmnopqrstuvwxyz";
+        StringBuilder name = new StringBuilder();
 
-	public Boolean waitForUrlToContain(String fraction, int timeoutInSeconds) {
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds));
-		return wait.until(ExpectedConditions.urlContains(fraction));
-	}
+        // Generate a random name of a specific length (e.g., 8 characters)
+        int nameLength = 8;
+        Random random = new Random();
 
+        for (int i = 0; i < nameLength; i++) {
+            int randomIndex = random.nextInt(characters.length());
+            char randomChar = characters.charAt(randomIndex);
+            name.append(randomChar);
+        }
+
+        return name.toString();
+
+    }
+	
+	 public static String generateRandomColor() {
+	        Random random = new Random();
+	        // Generate random values for red, green, and blue components
+	        int red = random.nextInt(256);
+	        int green = random.nextInt(256);
+	        int blue = random.nextInt(256);
+
+	        // Convert RGB values to hexadecimal format
+	        return String.format("#%02x%02x%02x", red, green, blue);
+	    }
 }

@@ -15,8 +15,8 @@ public class F02_InventoryManagementPartCreationStep extends BaseClass {
 
 	ConfigReader config = new ConfigReader();
 	LoginPage loginPage = new LoginPage(driver);
-	InventoryManagementPartCreationPage inventoryManagementPartCreationPage = new InventoryManagementPartCreationPage(
-			driver);
+	
+	InventoryManagementPartCreationPage inventoryManagementPartCreationPage = new InventoryManagementPartCreationPage(driver);
 	String parentWindowHandle;
 	WebDriverWait wait;
 
